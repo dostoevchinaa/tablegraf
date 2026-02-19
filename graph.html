@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>График</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .dashboard {
+            max-width: 1200px;
+            width: 100%;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+        }
+
+        h1 {
+            margin: 0 0 24px 0;
+            font-size: 24px;
+            color: #1a1e24;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            color: #3d3f41;
+        }
+
+        th {
+            font-weight: 600;
+            padding: 16px 20px;
+            text-align: right;
+            border: 4px solid #ffffff;
+            white-space: nowrap;
+            background-color: #F5F5F5;
+        }
+
+        th:first-child {
+            text-align: left;
+        }
+
+        th:nth-child(2) {
+            background-color: #EDF8FF;
+        }
+
+        td {
+            padding: 14px 20px;
+            border: 4px solid #ffffff;
+            color: #1a1e24;
+            transition: background-color 0.15s;
+            text-align: right;
+        }
+
+        td:first-child {
+            text-align: left;
+            font-weight: 500;
+            background-color: #F5F5F5;
+        }
+
+        td.chart-cell {
+            background-color: #ffffff;
+        }
+
+        td:nth-child(2) {
+            background-color: #EDF8FF;
+        }
+
+        td:nth-child(4) {
+            background-color: #F5F5F5;
+        }
+
+        tr:nth-child(1) td:nth-child(4) {
+            background-color: #FEE6E6 !important;
+        }
+
+        tr {
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+
+        /* tr:hover td {
+            background-color: #f0f4fe;
+        } */
+
+        /* tr.selected td {
+            background-color: #e6f0ff;
+            border-bottom: 1px solid #b8d4ff;
+        }
+
+        tr.selected+.chart-row td {
+            background-color: #f8fafd;
+        } */
+
+        .yesterday-cell {
+            align-items: center;
+            gap: 8px;
+        }
+
+        .yesterday-value {
+            font-weight: 500;
+        }
+
+        .yesterday-percent {
+            /* color: #10b981;
+            background: #e6f7f0; */
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            min-width: 45px;
+            text-align: center;
+        }
+
+        .yesterday-cell.positive {
+            background: #ECF7E7;
+        }
+
+        .yesterday-percent.positive {
+            color: #10b981;
+        }
+
+        .yesterday-cell.negative {
+            background: #FEE6E6;
+        }
+
+        .yesterday-percent.negative {
+            color: #ef4444;
+        }
+
+        .chart-container {
+            margin-top: 24px;
+            padding: 20px;
+            background: #f8fafd;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        #chart {
+            height: 300px;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                padding: 16px;
+            }
+
+            th,
+            td {
+                padding: 12px 10px;
+                font-size: 13px;
+            }
+
+            .yesterday-percent {
+                padding: 2px 6px;
+                font-size: 11px;
+                min-width: 35px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard">
+        <div class="table-container">
+            <table id="metrics-table">
+                <thead>
+                    <tr>
+                        <th>Показатель</th>
+                        <th>Текущий день</th>
+                        <th>Вчера</th>
+                        <th>Этот день недели</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const tableData = [
+            {
+                name: 'Выручка, руб',
+                current: '500 521',
+                yesterday: { value: '480 521', percent: 4 },
+                week: '4 805 121'
+            },
+            {
+                name: 'Наличные',
+                current: '300 000',
+                yesterday: { value: '300 000', percent: 0 },
+                week: '300 000'
+            },
+            {
+                name: 'Безналичный расчет',
+                current: '100 000',
+                yesterday: { value: '100 000', percent: 0 },
+                week: '100 000'
+            },
+            {
+                name: 'Кредитные карты',
+                current: '100 521',
+                yesterday: { value: '100 521', percent: 0 },
+                week: '100 521'
+            },
+            {
+                name: 'Средний чек, руб',
+                current: '1 300',
+                yesterday: { value: '900', percent: 44 },
+                week: '900'
+            },
+            {
+                name: 'Средний гость, руб',
+                current: '1 200',
+                yesterday: { value: '800', percent: 50 },
+                week: '800'
+            },
+            {
+                name: 'Удаления из чека (после оплаты), руб',
+                current: '1 000',
+                yesterday: { value: '1 100', percent: -9 },
+                week: '900'
+            },
+            {
+                name: 'Удаления из чека (до оплаты), руб',
+                current: '1 300',
+                yesterday: { value: '1 300', percent: 0 },
+                week: '900'
+            },
+            {
+                name: 'Количество чеков',
+                current: '34',
+                yesterday: { value: '36', percent: -6 },
+                week: '34'
+            },
+            {
+                name: 'Количество гостей',
+                current: '34',
+                yesterday: { value: '36', percent: -6 },
+                week: '32'
+            }
+        ];
+
+        const chartData = {
+            'Выручка, руб': [54.5, 55.2, 54.8, 55.5, 56.1, 55.9, 56.8],
+            'Наличные': [30.2, 31.1, 30.8, 31.5, 32.0, 31.7, 32.4],
+            'Безналичный расчет': [24.3, 24.1, 24.0, 24.0, 24.1, 24.2, 24.4],
+            'Кредитные карты': [24.3, 24.1, 24.0, 24.0, 24.1, 24.2, 24.4],
+            'Средний чек, руб': [1.2, 1.3, 1.3, 1.4, 1.4, 1.3, 1.5],
+            'Средний гость, руб': [1.1, 1.1, 1.2, 1.2, 1.3, 1.2, 1.3],
+            'Удаления из чека (после оплаты), руб': [0.8, 0.9, 1.0, 0.9, 1.1, 1.0, 0.9],
+            'Удаления из чека (до оплаты), руб': [1.2, 1.3, 1.2, 1.3, 1.4, 1.3, 1.2],
+            'Количество чеков': [34, 35, 34, 36, 35, 34, 36],
+            'Количество гостей': [34, 34, 35, 34, 35, 34, 35]
+        };
+
+        let currentChart = null;
+        let lastSelectedRow = null;
+        let lastSelectedIndex = -1;
+
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            tableData.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                tr.dataset.index = index;
+                tr.dataset.name = row.name;
+                tr.classList.add('data-row');
+
+                const tdName = document.createElement('td');
+                tdName.textContent = row.name;
+                tr.appendChild(tdName);
+
+                const tdCurrent = document.createElement('td');
+                tdCurrent.textContent = row.current;
+                tr.appendChild(tdCurrent);
+
+                const tdYesterday = document.createElement('td');
+                const percentValue = row.yesterday.percent;
+                const percentClass = percentValue < 0 ? 'negative' : 'positive';
+                const percentSign = percentValue > 0 ? '+' : '';
+
+                tdYesterday.className = `yesterday-cell ${percentClass}`;
+
+                tdYesterday.innerHTML = `
+    <span class="yesterday-value">${row.yesterday.value}</span>
+    <span class="yesterday-percent ${percentClass}">${percentSign}${percentValue}%</span>
+`;
+
+
+                tr.appendChild(tdYesterday);
+
+                const tdWeek = document.createElement('td');
+                tdWeek.textContent = row.week;
+                tr.appendChild(tdWeek);
+
+                tbody.appendChild(tr);
+
+                const chartRow = document.createElement('tr');
+                chartRow.classList.add('chart-row');
+                chartRow.dataset.forIndex = index;
+                chartRow.style.display = 'none';
+
+                const chartCell = document.createElement('td');
+                chartCell.classList.add('chart-cell');
+                chartCell.colSpan = 4;
+                chartCell.innerHTML = '<div class="chart-wrapper" style="height: 250px;"><canvas class="chart-canvas"></canvas></div>';
+
+                chartRow.appendChild(chartCell);
+                tbody.appendChild(chartRow);
+            });
+        }
+
+        function renderChart(rowIndex, rowName) {
+            const chartRows = document.querySelectorAll('.chart-row');
+            const dataRows = document.querySelectorAll('.data-row');
+            const data = chartData[rowName] || chartData['Выручка, руб'];
+
+            chartRows.forEach(row => {
+                row.style.display = 'none';
+            });
+
+            const targetChartRow = document.querySelector(`.chart-row[data-for-index="${rowIndex}"]`);
+            if (targetChartRow) {
+                targetChartRow.style.display = 'table-row';
+
+                const canvas = targetChartRow.querySelector('.chart-canvas');
+                if (canvas) {
+                    if (currentChart) {
+                        currentChart.destroy();
+                    }
+
+                    const ctx = canvas.getContext('2d');
+                    currentChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'],
+                            datasets: [{
+                                label: rowName,
+                                data: data,
+                                borderColor: '#037D50',
+                                borderWidth: 3,
+                                pointBackgroundColor: '#037D50',
+                                pointRadius: 4,
+                                tension: 0.3
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                            },
+                            scales: {
+                                y: {
+                                    display: true,
+                                    grid: {
+                                        color: '#ffffff',
+                                        tickColor: '#000000'
+                                    },
+                                    ticks: {
+                                        color: '#000000',
+                                        stepSize: 1,
+                                        callback: function (value) {
+                                            return '';
+                                        }
+                                    },
+                                    border: {
+                                        color: '#000000',
+                                        width: 2
+                                    }
+                                },
+                                x: {
+                                    display: true,
+                                    grid: {
+                                        color: '#ffffff',
+                                        tickColor: '#000000'
+                                    },
+                                    ticks: {
+                                        color: '#000000',
+                                        callback: function (value, index) {
+                                            return '';
+                                        }
+                                    },
+                                    border: {
+                                        color: '#000000',
+                                        width: 2
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+        function handleRowClick(event) {
+            const row = event.currentTarget;
+            const rowIndex = row.dataset.index;
+            const rowName = row.dataset.name;
+
+            if (lastSelectedIndex === parseInt(rowIndex)) {
+                const chartRow = document.querySelector(`.chart-row[data-for-index="${rowIndex}"]`);
+                if (chartRow) {
+                    chartRow.style.display = 'none';
+                }
+                row.classList.remove('selected');
+                lastSelectedIndex = -1;
+                lastSelectedRow = null;
+                return;
+            }
+
+            if (lastSelectedRow) {
+                lastSelectedRow.classList.remove('selected');
+            }
+
+            row.classList.add('selected');
+            lastSelectedRow = row;
+            lastSelectedIndex = parseInt(rowIndex);
+
+            renderChart(rowIndex, rowName);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderTable();
+
+            const dataRows = document.querySelectorAll('.data-row');
+            dataRows.forEach(row => {
+                row.addEventListener('click', handleRowClick);
+            });
+        });
+    </script>
+</body>
+
+</html>
